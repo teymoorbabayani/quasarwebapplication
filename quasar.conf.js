@@ -142,9 +142,9 @@ module.exports = configure(function (ctx) {
       },
 
       manifest: {
-        name: 'saythecost',
-        short_name: 'saythecost',
-        description: 'Tell me the cost',
+        name: 'برنامه ریز بودجه',
+        short_name: 'فاجت',
+        description: 'برنامه‌ای برای مدیریت بودجه که میتوانید رایگان از آن استفاده کنید',
         display: 'standalone',
         orientation: 'portrait',
         background_color: '#ffffff',
