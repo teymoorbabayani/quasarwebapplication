@@ -1,6 +1,6 @@
-# saythecost (saythecost)
+# فاجت (برنامه‌ریز بودجه)
 
-Tell me the cost
+برنامه‌ای برای مدیریت بودجه که میتوانید رایگان از آن استفاده کنید
 
 ## Install the dependencies
 ```bash

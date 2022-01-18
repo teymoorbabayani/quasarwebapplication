@@ -142,7 +142,7 @@ module.exports = configure(function (ctx) {
       },
 
       manifest: {
-        name: 'برنامه ریز بودجه',
+        name: 'برنامه‌ریز بودجه',
         short_name: 'فاجت',
         description: 'برنامه‌ای برای مدیریت بودجه که میتوانید رایگان از آن استفاده کنید',
         display: 'standalone',
