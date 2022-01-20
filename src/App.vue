@@ -8,3 +8,9 @@ export default defineComponent({
   name: 'App'
 })
 </script>
+
+<style>
+.artinSharp {
+  font-family: "ArtinSharp";
+}
+</style>

@@ -1,8 +1,8 @@
 {
-  "name": "saythecost",
+  "name": "فاجت",
   "version": "0.0.1",
-  "description": "Tell me the cost",
-  "productName": "saythecost",
+  "description": "برنامه ردیابی بودجه و هزینه",
+  "productName": "فاجت",
   "author": "teymourbabayani@gmail.com",
   "private": true,
   "scripts": {
