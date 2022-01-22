@@ -1,6 +1,7 @@
 <template>
   <q-page class="bg-primary q-pb-xl">
     <q-list bordered>
+      <q-separator v-if="amounts.length > 0" color="orange" />
       <q-slide-item
         v-for="(amount,index) in amounts"
         :key="amount.id"
@@ -29,90 +30,90 @@
             </q-card-section>
           </q-card>
         </template>
-        <q-item class="q-pa-none">
-          <div class="row full-width">
-            <div @click="selectamoutfunc(amount, 'text')" class="col-5">
-              <q-input
-                item-aligned
-                class="full-width full-height q-pa-none"
-                v-if="selectamount.id === amount.id && clickeditem === 'text'"
-                :input-class="[{'text-green inset-shadow q-pl-sm' : amount.type === 'plus'}, {'text-red inset-shadow q-pl-sm' : amount.type !== 'plus'}]"
-                dense
-                autofocus
-                hide-bottom-space
-                @blur="disableselect"
-                bg-color="white"
-                borderless
-                v-model="amount.text"
-                :placeholder="amount.example"
-                label=""
-              />
-              <q-card v-else flat square>
-                <q-card-section class="q-pa-sm">
-                  <div
-                    class="ellipsis"
-                    :class="amount.type === 'plus' ? 'text-green' : 'text-red' "
-                  >
-                    {{ amount.text }}
-                  </div>
-                </q-card-section>
-              </q-card>
-            </div>
-            <div @click="selectamoutfunc(amount, 'price')" class="col-4">
-              <q-input
-                v-if="selectamount.id === amount.id && clickeditem === 'price'"
-                :input-class="[{'text-green inset-shadow q-pl-sm' : amount.type === 'plus'}, {'text-red inset-shadow q-pl-sm' : amount.type !== 'plus'}]"
-                dense
-                autofocus
-                @blur="disableselect"
-                bg-color="white"
-                borderless
-                dir="ltr"
-                v-model="amount.price"
-              />
-              <q-card v-else flat square>
-                <q-card-section class="q-pa-sm">
-                  <div
-                    class="ellipsis"
-                    :class="amount.type === 'plus' ? 'text-green' : 'text-red' "
-                  >
-                    <span v-if="amount.type === 'plus'"> + </span>
-                    <span v-else> - </span>
-                    <span v-if="amount.price === ''"> 0 </span>
-                    <span v-else> {{ amount.price }} </span>
-                    <span> تومان </span>
-                  </div>
-                </q-card-section>
-              </q-card>
-            </div>
-            <div @click="selectamoutfunc(amount, 'date')" class="col-3">
-              <q-input
-                v-if="selectamount.id === amount.id && clickeditem === 'date'"
-                input-class="inset-shadow q-pl-sm"
-                dense
-                autofocus
-                @blur="disableselect"
-                bg-color="white"
-                borderless
-                v-model="amount.date"
-              />
-              <q-card v-else flat square>
-                <q-card-section>
-                  <div class="ellipsis">
-                    <span v-if="amount.date === null" style="font-size: 10px;" class="column justify-center text-grey-6">
-                      <div class="row">
-                        <span>تاریخ</span>
-                        <q-space />
-                        <q-icon name="expand_more" />
-                      </div>
-                    </span>
-                    <span class="text-primary">{{ amount.date }}</span>
-                  </div>
-                </q-card-section>
-              </q-card>
-            </div>
+        <div class="row full-width">
+          <div @click="selectamoutfunc(amount, 'text')" class="col">
+            <q-input
+              item-aligned
+              class="full-width q-pa-none"
+              v-if="selectamount.id === amount.id && clickeditem === 'text'"
+              :input-class="[{'text-green insetshadow q-pl-sm' : amount.type === 'plus'}, {'text-red insetshadow q-pl-sm' : amount.type !== 'plus'}]"
+              autofocus
+              hide-bottom-space
+              @blur="disableselect"
+              bg-color="white"
+              borderless
+              v-model="amount.text"
+              :placeholder="amount.example"
+            />
+            <q-card v-else style="height:56px;" flat square>
+              <q-card-section class="q-pa-sm full-height column justify-center">
+                <div
+                  class="ellipsis"
+                  :class="amount.type === 'plus' ? 'text-green' : 'text-red' "
+                >
+                  {{ amount.text }}
+                </div>
+              </q-card-section>
+            </q-card>
           </div>
-        </q-item>
+          <div @click="selectamoutfunc(amount, 'price')" class="col">
+            <q-input
+              v-if="selectamount.id === amount.id && clickeditem === 'price'"
+              :input-class="[{'text-green insetshadow q-pr-sm' : amount.type === 'plus'}, {'text-red insetshadow q-pr-sm' : amount.type !== 'plus'}]"
+              autofocus
+              @blur="disableselect"
+              bg-color="white"
+              borderless
+              dir="ltr"
+              v-model="amount.price"
+            />
+            <q-card v-else style="height:56px;" flat square>
+              <q-card-section class="q-pa-sm full-height column justify-center">
+                <div
+                  class="ellipsis"
+                  :class="amount.type === 'plus' ? 'text-green' : 'text-red' "
+                >
+                  <span v-if="amount.type === 'plus'"> + </span>
+                  <span v-else> - </span>
+                  <span v-if="amount.price === ''"> 0 </span>
+                  <span v-else> {{ amount.price }} </span>
+                  <span> تومان </span>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+          <q-separator vertical color="grey-3" />
+          <div @click="selectamoutfunc(amount, 'date')" class="col">
+            <q-input
+              v-if="selectamount.id === amount.id && clickeditem === 'date'"
+              input-class="insetshadow q-pr-sm"
+              autofocus
+              dir="ltr"
+              @blur="disableselect"
+              bg-color="white"
+              borderless
+              v-model="amount.date"
+            />
+            <q-card v-else style="height:56px;" flat square>
+              <q-card-section class="q-pa-sm full-height column justify-center">
+                <div class="ellipsis row text-grey-6">
+                  <div class="col-10 column justify-center">
+                    <span v-if="amount.date === null" style="font-size:10px">تاریخ</span>
+                    <span v-else class="row justify-center text-primary">
+                      <span>
+                        {{ amount.date }}
+                      </span>
+                    </span>
+                  </div>
+                  <q-space />
+                  <div class="column justify-center">
+                    <q-icon name="expand_more" />
+                  </div>
+                </div>
+              </q-card-section>
+            </q-card>
+          </div>
+        </div>
         <q-separator color="orange" />
       </q-slide-item>
     </q-list>
@@ -249,5 +250,11 @@ export default defineComponent({
 <style>
 .q-list--separator {
   background-color: #F8831A;
+}
+.insetshadow {
+  border: 1px solid #F8831A;
+   -moz-box-shadow:    inset 0 0 5px #000000;
+   -webkit-box-shadow: inset 0 0 5px #000000;
+   box-shadow:         inset 0 0 5px #000000;
 }
 </style>
