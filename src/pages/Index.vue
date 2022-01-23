@@ -1,5 +1,5 @@
 <template>
-  <q-page class="bg-primary q-pb-xl">
+  <q-page class="bg-primary" style="padding-bottom: 200px">
     <q-list bordered>
       <q-separator v-if="amounts.length > 0" color="orange" />
       <q-slide-item
@@ -86,7 +86,7 @@
           <div @click="selectamoutfunc(amount, 'date')" class="col">
             <q-input
               v-if="selectamount.id === amount.id && clickeditem === 'date'"
-              input-class="insetshadow q-pr-sm"
+              input-class="insetshadow q-pr-sm text-primary"
               autofocus
               dir="ltr"
               @blur="disableselect"
@@ -140,12 +140,35 @@
       </q-card-actions>
       </q-card>
     </div>
+    <!-- footer -->
+    <div v-show="clickeditem === null" class="fixed-bottom bg-primary shadow-up-2">
+      <q-card
+        square
+        class="bg-transparent"
+      >
+      <q-card-actions
+        class="row q-pa-none artinSharp"
+        align="around"
+      >
+        <!-- left side -->
+        <div class="col cursor-pointer q-pa-sm text-left">
+          <paidbalance :amounts="amounts"></paidbalance>
+        </div>
+        <!-- right side -->
+        <div class="col cursor-pointer q-pa-sm text-right">
+          <expensesincome :amounts="amounts"></expensesincome>
+        </div>
+      </q-card-actions>
+      </q-card>
+    </div>
   </q-page>
 </template>
 
 <script>
 import { useQuasar } from 'quasar'
 import { onBeforeUnmount, defineComponent, reactive, ref, watch } from 'vue'
+import expensesincome from 'src/components/expensesincome.vue'
+import paidbalance from 'src/components/paidbalance.vue'
 
 export default defineComponent({
   name: 'PageIndex',
@@ -206,16 +229,19 @@ export default defineComponent({
       selectamount.text = amountdata.text
       selectamount.price = amountdata.price
       selectamount.date = amountdata.date
+      clearTimeout(timer)
       clickeditem.value = item
     }
     function finalize (reset) {
       timer = setTimeout(() => {
         reset()
-      }, 1000)
+      }, 100)
     }
     function disableselect () {
       if (clickeditem.value !== null) {
-        clickeditem.value = null
+        timer = setTimeout(() => {
+          clickeditem.value = null
+        }, 100)
       }
     }
 
@@ -243,6 +269,10 @@ export default defineComponent({
         $q.notify('delete')
       }
     }
+  },
+  components: {
+    expensesincome,
+    paidbalance
   }
 })
 </script>
