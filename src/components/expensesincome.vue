@@ -7,16 +7,16 @@
                 class="row"
             >
                 <q-chip
-                    :class="selecteditem === 'plus' ? 'selecteditem' : 'unselecteditem'"
-                    :text-color="selecteditem === 'plus' ? 'white' : 'grey-6'"
+                    :class="selecteditem === 'income' ? 'selecteditem' : 'unselecteditem'"
+                    :text-color="selecteditem === 'income' ? 'white' : 'grey-6'"
                     class="q-ma-none"
                     size="sm"
                 >
                     درآمد
                 </q-chip>
                 <q-chip
-                    :class="selecteditem === 'mines' ? 'selecteditem' : 'unselecteditem'"
-                    :text-color="selecteditem === 'mines' ? 'white' : 'grey-6'"
+                    :class="selecteditem === 'expense' ? 'selecteditem' : 'unselecteditem'"
+                    :text-color="selecteditem === 'expense' ? 'white' : 'grey-6'"
                     class="q-ma-none"
                     size="sm"
                 >
@@ -25,29 +25,57 @@
             </div>
         </div>
         <span class="ellipsis full-width text-white text-h6">
-            <span v-if="selecteditem === 'plus'">
-                <!-- for plus --> +20 تومان
+            <span v-if="selecteditem === 'income'">
+                <!-- for income --> {{ income }} تومان
             </span>
             <span v-else>
-                <!-- for mines --> -40 تومان
+                <!-- for expense --> {{ expense }}- تومان
             </span>
         </span>
     </div>
 </template>
 <script>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 export default {
   props: ['amounts'],
-  setup (amounts) {
-    const selecteditem = ref('mines')
+  setup (props) {
+    const selecteditem = ref('expense')
     function changeitem () {
-      if (selecteditem.value === 'plus') {
-        selecteditem.value = 'mines'
+      if (selecteditem.value === 'income') {
+        selecteditem.value = 'expense'
       } else {
-        selecteditem.value = 'plus'
+        selecteditem.value = 'income'
       }
     }
+    const expense = computed({
+      get: () => {
+        const result = ref(0)
+        if (props.amounts.length > 0) {
+          props.amounts.forEach(amount => {
+            if (amount.type === 'expense') {
+              result.value = result.value + Number(amount.price)
+            }
+          })
+        }
+        return result
+      }
+    })
+    const income = computed({
+      get: () => {
+        const result = ref(0)
+        if (props.amounts.length > 0) {
+          props.amounts.forEach(amount => {
+            if (amount.type === 'income') {
+              result.value = result.value + Number(amount.price)
+            }
+          })
+        }
+        return result
+      }
+    })
     return {
+      expense,
+      income,
       changeitem,
       selecteditem
     }

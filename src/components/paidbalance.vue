@@ -26,19 +26,21 @@
         </div>
         <span class="ellipsis full-width text-white text-h6">
             <span v-if="selecteditem === 'balance'">
-                <!-- for balance --> +20 تومان
+                <!-- for balance --> {{ balance }} تومان
+                <span>{{ balancetype }}</span>
             </span>
             <span v-else>
-                <!-- for paid --> -40 تومان
+                <!-- for paid --> {{ paid }} تومان
+                <span>{{ paidtype }}</span>
             </span>
         </span>
     </div>
 </template>
 <script>
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 export default {
   props: ['amounts'],
-  setup (amounts) {
+  setup (props) {
     const selecteditem = ref('balance')
     function changeitem () {
       if (selecteditem.value === 'balance') {
@@ -47,7 +49,91 @@ export default {
         selecteditem.value = 'balance'
       }
     }
+    const paid = computed({
+      get: () => {
+        const result = ref(0)
+        if (props.amounts.length > 0) {
+          props.amounts.forEach(amount => {
+            if (amount.paid) {
+              if (amount.type === 'income') {
+                result.value = result.value + Number(amount.price)
+              } else {
+                result.value = result.value - Number(amount.price)
+              }
+            }
+          })
+        }
+        if (result.value < 0) {
+          return result.value * -1
+        } else {
+          return result
+        }
+      }
+    })
+    const paidtype = computed({
+      get: () => {
+        const result = ref(0)
+        if (props.amounts.length > 0) {
+          props.amounts.forEach(amount => {
+            if (amount.paid) {
+              if (amount.type === 'income') {
+                result.value = result.value + Number(amount.price)
+              } else {
+                result.value = result.value - Number(amount.price)
+              }
+            }
+          })
+        }
+        if (result.value < 0) {
+          return '-'
+        } else {
+          return ''
+        }
+      }
+    })
+    const balancetype = computed({
+      get: () => {
+        const result = ref(0)
+        if (props.amounts.length > 0) {
+          props.amounts.forEach(amount => {
+            if (amount.type === 'income') {
+              result.value = result.value + Number(amount.price)
+            } else {
+              result.value = result.value - Number(amount.price)
+            }
+          })
+        }
+        if (result.value < 0) {
+          return '-'
+        } else {
+          return ''
+        }
+      }
+    })
+    const balance = computed({
+      get: () => {
+        const result = ref(0)
+        if (props.amounts.length > 0) {
+          props.amounts.forEach(amount => {
+            if (amount.type === 'income') {
+              result.value = result.value + Number(amount.price)
+            } else {
+              result.value = result.value - Number(amount.price)
+            }
+          })
+        }
+        if (result.value < 0) {
+          return result.value * -1
+        } else {
+          return result
+        }
+      }
+    })
     return {
+      paid,
+      paidtype,
+      balance,
+      balancetype,
       changeitem,
       selecteditem
     }

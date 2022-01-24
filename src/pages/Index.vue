@@ -5,17 +5,25 @@
       <q-slide-item
         v-for="(amount,index) in amounts"
         :key="amount.id"
-        @left="onLeft"
+        @left="onLeft(index)"
         @right="onRight(index)"
-        left-color="green"
+        @action ="action"
+        :left-color="amount.paid ? 'primary' : 'green'"
         right-color="red"
       >
         <template v-slot:left>
-          <q-card flat square class="bg-transparent">
+          <q-card v-if="amount.paid" flat square class="bg-transparent">
+            <q-card-section horizontal>
+              <div class="ellipsis">
+                برگشتن به حالت پرداخت نشده
+              </div>
+            </q-card-section>
+          </q-card>
+          <q-card v-else flat square class="bg-transparent">
             <q-card-section horizontal>
               <q-icon size="xs" name="done" />
               <div class="ellipsis">
-                تغییر وضعیت به انجام شد
+                تغییر وضعیت به پرداخت شد
               </div>
             </q-card-section>
           </q-card>
@@ -36,7 +44,7 @@
               item-aligned
               class="full-width q-pa-none"
               v-if="selectamount.id === amount.id && clickeditem === 'text'"
-              :input-class="[{'text-green insetshadow q-pl-sm' : amount.type === 'plus'}, {'text-red insetshadow q-pl-sm' : amount.type !== 'plus'}]"
+              :input-class="[{'text-green insetshadow q-pl-sm' : amount.type === 'income'}, {'text-red insetshadow q-pl-sm' : amount.type !== 'income'}]"
               autofocus
               hide-bottom-space
               @blur="disableselect"
@@ -49,7 +57,7 @@
               <q-card-section class="q-pa-sm full-height column justify-center">
                 <div
                   class="ellipsis"
-                  :class="amount.type === 'plus' ? 'text-green' : 'text-red' "
+                  :class="[amount.type === 'income' ? 'text-green' : 'text-red', amount.paid ? 'text-strike' : '']"
                 >
                   {{ amount.text }}
                 </div>
@@ -59,7 +67,7 @@
           <div @click="selectamoutfunc(amount, 'price')" class="col">
             <q-input
               v-if="selectamount.id === amount.id && clickeditem === 'price'"
-              :input-class="[{'text-green insetshadow q-pr-sm' : amount.type === 'plus'}, {'text-red insetshadow q-pr-sm' : amount.type !== 'plus'}]"
+              :input-class="[{'text-green insetshadow q-pr-sm' : amount.type === 'income'}, {'text-red insetshadow q-pr-sm' : amount.type !== 'income'}]"
               autofocus
               @blur="disableselect"
               bg-color="white"
@@ -71,13 +79,13 @@
               <q-card-section class="q-pa-sm full-height column justify-center">
                 <div
                   class="ellipsis"
-                  :class="amount.type === 'plus' ? 'text-green' : 'text-red' "
+                  :class="[amount.type === 'income' ? 'text-green' : 'text-red', amount.paid ? 'text-strike' : '']"
                 >
-                  <span v-if="amount.type === 'plus'"> + </span>
-                  <span v-else> - </span>
                   <span v-if="amount.price === ''"> 0 </span>
                   <span v-else> {{ amount.price }} </span>
                   <span> تومان </span>
+                  <span v-if="amount.type === 'income'"> + </span>
+                  <span v-else> - </span>
                 </div>
               </q-card-section>
             </q-card>
@@ -100,7 +108,9 @@
                   <div class="col-10 column justify-center">
                     <span v-if="amount.date === null" style="font-size:10px">تاریخ</span>
                     <span v-else class="row justify-center text-primary">
-                      <span>
+                      <span
+                      :class="amount.paid ? 'text-strike' : ''"
+                      >
                         {{ amount.date }}
                       </span>
                     </span>
@@ -117,6 +127,7 @@
         <q-separator color="orange" />
       </q-slide-item>
     </q-list>
+    <!-- btns for set income or expense -->
     <div class="text-center text-white shadow-2">
       <q-card
         square
@@ -127,13 +138,13 @@
         align="around"
       >
         <div @click="storeIncomeAmount" class="col">
-          <q-btn class="ellipsis full-width">
+          <q-btn size="lg" class="ellipsis full-width">
             اضافه کردن درآمد
           </q-btn>
         </div>
         <q-separator vertical />
         <div @click="storeExpenseAmount" class="col">
-          <q-btn class="ellipsis full-width">
+          <q-btn size="lg" class="ellipsis full-width">
             اضافه کردن هزینه
           </q-btn>
         </div>
@@ -165,8 +176,7 @@
 </template>
 
 <script>
-import { useQuasar } from 'quasar'
-import { onBeforeUnmount, defineComponent, reactive, ref, watch } from 'vue'
+import { onBeforeUnmount, defineComponent, reactive, ref } from 'vue'
 import expensesincome from 'src/components/expensesincome.vue'
 import paidbalance from 'src/components/paidbalance.vue'
 
@@ -180,12 +190,12 @@ export default defineComponent({
       text: '',
       type: '',
       price: '',
+      paid: false,
       date: null
     })
     const uniqeID = ref(0)
     const amounts = ref([])
 
-    const $q = useQuasar()
     let timer
 
     function storeIncomeAmount () {
@@ -193,8 +203,9 @@ export default defineComponent({
         id: uniqeID.value + 1,
         example: 'مثل حقوق',
         text: '',
-        type: 'plus',
+        type: 'income',
         price: '',
+        paid: false,
         date: null
       })
       uniqeID.value++
@@ -206,24 +217,15 @@ export default defineComponent({
         id: uniqeID.value + 1,
         example: 'مثل اجاره',
         text: '',
-        type: 'mines',
+        type: 'expense',
         price: '',
+        paid: false,
         date: null
       })
       uniqeID.value++
       amounts.value.push(amount)
       selectamoutfunc(amount, 'text')
     }
-    function updateAmount (index) {
-      //
-    }
-    function deleteAmount (index) {
-      amounts.value.splice(index, 1)
-    }
-    watch(amounts.value, (amounts, prevamounts) => {
-      // console.log(amounts)
-    })
-
     function selectamoutfunc (amountdata, item) {
       selectamount.id = amountdata.id
       selectamount.text = amountdata.text
@@ -232,17 +234,21 @@ export default defineComponent({
       clearTimeout(timer)
       clickeditem.value = item
     }
-    function finalize (reset) {
-      timer = setTimeout(() => {
-        reset()
-      }, 100)
-    }
     function disableselect () {
       if (clickeditem.value !== null) {
         timer = setTimeout(() => {
           clickeditem.value = null
         }, 100)
       }
+    }
+    function finalize (reset) {
+      timer = setTimeout(() => {
+        reset()
+      }, 1000)
+    }
+
+    function updateAmount (index) {
+      //
     }
 
     onBeforeUnmount(() => {
@@ -257,16 +263,26 @@ export default defineComponent({
       storeIncomeAmount,
       storeExpenseAmount,
       updateAmount,
-      deleteAmount,
       amounts,
-      onLeft ({ reset }) {
-        $q.notify('done or not done')
-        finalize(reset)
+      onLeft (index) {
+        if (amounts.value[index].paid) {
+          timer = setTimeout(() => {
+            amounts.value[index].paid = false
+          }, 1500)
+        } else {
+          timer = setTimeout(() => {
+            amounts.value[index].paid = true
+          }, 1500)
+        }
       },
       finalize,
       onRight (index) {
-        deleteAmount(index)
-        $q.notify('delete')
+        amounts.value.splice(index, 1)
+      },
+      action ({ side, reset }) {
+        if (side === 'left') {
+          finalize(reset)
+        }
       }
     }
   },
