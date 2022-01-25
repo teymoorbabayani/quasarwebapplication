@@ -29,7 +29,9 @@
                 <!-- for income --> {{ income }} تومان
             </span>
             <span v-else>
-                <!-- for expense --> {{ expense }}- تومان
+                <!-- for expense --> {{ expense }}
+                <span v-if="expense !== 0">-</span>
+                 تومان
             </span>
         </span>
     </div>
@@ -57,7 +59,7 @@ export default {
             }
           })
         }
-        return result
+        return result.value
       }
     })
     const income = computed({
@@ -70,7 +72,7 @@ export default {
             }
           })
         }
-        return result
+        return result.value
       }
     })
     return {

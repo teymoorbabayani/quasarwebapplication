@@ -5,8 +5,8 @@
       <q-slide-item
         v-for="(amount,index) in amounts"
         :key="amount.id"
-        @left="onLeft(index)"
-        @right="onRight(index)"
+        @left="onLeft(index, amount.id)"
+        @right="onRight(index, amount.id)"
         @action ="action"
         :left-color="amount.paid ? 'primary' : 'green'"
         right-color="red"
@@ -47,7 +47,7 @@
               :input-class="[{'text-green insetshadow q-pl-sm' : amount.type === 'income'}, {'text-red insetshadow q-pl-sm' : amount.type !== 'income'}]"
               autofocus
               hide-bottom-space
-              @blur="disableselect"
+              @blur="disableselect(index, amount.id)"
               bg-color="white"
               borderless
               v-model="amount.text"
@@ -69,7 +69,7 @@
               v-if="selectamount.id === amount.id && clickeditem === 'price'"
               :input-class="[{'text-green insetshadow q-pr-sm' : amount.type === 'income'}, {'text-red insetshadow q-pr-sm' : amount.type !== 'income'}]"
               autofocus
-              @blur="disableselect"
+              @blur="disableselect(index, amount.id)"
               bg-color="white"
               borderless
               dir="ltr"
@@ -97,7 +97,7 @@
               input-class="insetshadow q-pr-sm text-primary"
               autofocus
               dir="ltr"
-              @blur="disableselect"
+              @blur="disableselect(index, amount.id)"
               bg-color="white"
               borderless
               v-model="amount.date"
@@ -176,10 +176,12 @@
 </template>
 
 <script>
-import { onBeforeUnmount, defineComponent, reactive, ref } from 'vue'
+import { onMounted, defineComponent, reactive, ref } from 'vue'
 import expensesincome from 'src/components/expensesincome.vue'
 import paidbalance from 'src/components/paidbalance.vue'
+import Localbase from 'localbase'
 
+const db = new Localbase('db')
 export default defineComponent({
   name: 'PageIndex',
   setup () {
@@ -208,8 +210,22 @@ export default defineComponent({
         paid: false,
         date: null
       })
-      uniqeID.value++
+      db.collection('amounts').add({
+        id: uniqeID.value + 1,
+        text: '',
+        type: 'income',
+        price: '',
+        paid: false,
+        date: null
+      })
       amounts.value.push(amount)
+      //
+      uniqeID.value++
+      db.collection('appdata')
+        .doc('uniqeID')
+        .update({
+          value: uniqeID.value
+        })
       selectamoutfunc(amount, 'text')
     }
     function storeExpenseAmount () {
@@ -222,11 +238,31 @@ export default defineComponent({
         paid: false,
         date: null
       })
-      uniqeID.value++
+      db.collection('amounts').add({
+        id: uniqeID.value + 1,
+        text: '',
+        type: 'expense',
+        price: '',
+        paid: false,
+        date: null
+      })
       amounts.value.push(amount)
+      //
+      uniqeID.value++
+      db.collection('appdata')
+        .doc('uniqeID')
+        .update({
+          value: uniqeID.value
+        })
       selectamoutfunc(amount, 'text')
     }
     function selectamoutfunc (amountdata, item) {
+      const olddataindex = amounts.value.findIndex(amount =>
+        amount.id === selectamount.id
+      )
+      if (olddataindex > -1) {
+        disableselect(olddataindex, selectamount.id)
+      }
       selectamount.id = amountdata.id
       selectamount.text = amountdata.text
       selectamount.price = amountdata.price
@@ -234,8 +270,9 @@ export default defineComponent({
       clearTimeout(timer)
       clickeditem.value = item
     }
-    function disableselect () {
+    function disableselect (index, id) {
       if (clickeditem.value !== null) {
+        updateAmount(index, id)
         timer = setTimeout(() => {
           clickeditem.value = null
         }, 100)
@@ -247,15 +284,63 @@ export default defineComponent({
       }, 1000)
     }
 
-    function updateAmount (index) {
-      //
+    function updateAmount (index, id) {
+      if (clickeditem.value !== null) {
+        if (clickeditem.value === 'text') {
+          db.collection('amounts').doc({ id: id }).update({
+            text: amounts.value[index].text
+          })
+        } else if (clickeditem.value === 'price') {
+          db.collection('amounts').doc({ id: id }).update({
+            price: amounts.value[index].price
+          })
+        } else if (clickeditem.value === 'date') {
+          db.collection('amounts').doc({ id: id }).update({
+            date: amounts.value[index].date
+          })
+        }
+      }
     }
 
-    onBeforeUnmount(() => {
+    onMounted(() => {
+      getamounts()
+      getappdata()
       clearTimeout(timer)
     })
 
+    function getamounts () {
+      db.collection('amounts').get().then(amountsdbdata => {
+        amounts.value = amountsdbdata
+      })
+    }
+    function getappdata () {
+      db.collection('appdata')
+        .doc('uniqeID')
+        .get()
+        .then(document => {
+          if (document.value === null) {
+            db.collection('appdata')
+              .doc('uniqeID')
+              .set({
+                value: 0
+              })
+            uniqeID.value = 0
+          } else if (document.value >= 0) {
+            uniqeID.value = document.value
+          }
+        }).catch(er => {
+          db.collection('appdata')
+            .doc('uniqeID')
+            .set({
+              value: 0
+            })
+          uniqeID.value = 0
+        })
+      //
+    }
     return {
+      getappdata,
+      getamounts,
       disableselect,
       clickeditem,
       selectamount,
@@ -264,20 +349,27 @@ export default defineComponent({
       storeExpenseAmount,
       updateAmount,
       amounts,
-      onLeft (index) {
+      onLeft (index, id) {
         if (amounts.value[index].paid) {
           timer = setTimeout(() => {
             amounts.value[index].paid = false
+            db.collection('amounts').doc({ id: id }).update({
+              paid: false
+            })
           }, 1500)
         } else {
           timer = setTimeout(() => {
             amounts.value[index].paid = true
+            db.collection('amounts').doc({ id: id }).update({
+              paid: true
+            })
           }, 1500)
         }
       },
       finalize,
-      onRight (index) {
+      onRight (index, id) {
         amounts.value.splice(index, 1)
+        db.collection('amounts').doc({ id: id }).delete()
       },
       action ({ side, reset }) {
         if (side === 'left') {
