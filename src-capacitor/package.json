@@ -1,0 +1,12 @@
+{
+  "name": "fajet",
+  "version": "0.0.1",
+  "description": "برنامه ردیابی بودجه و هزینه",
+  "author": "teymourbabayani@gmail.com",
+  "private": true,
+  "dependencies": {
+    "@capacitor/android": "2.5.0",
+    "@capacitor/cli": "^2.0.0",
+    "@capacitor/core": "^2.0.0"
+  }
+}
