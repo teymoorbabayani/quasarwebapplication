@@ -4,7 +4,13 @@
       <q-toolbar class="text-center">
 
         <q-toolbar-title class="full-width artinSharp text-h4">
-          پروژه طراحی سایت
+          <span class="bg-red">
+            <div>
+              <div>
+                برنامه ریز بودجه <q-badge align="top" color="primary">فاجت</q-badge>
+              </div>
+            </div>
+          </span>
         </q-toolbar-title>
 
       </q-toolbar>
