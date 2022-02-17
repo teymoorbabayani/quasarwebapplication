@@ -248,10 +248,13 @@ export default defineComponent({
           }
         }
       }
-      if (datainvalid) {
-        amounts.value[index].price = 0
+      if (Number(strdata) !== 0) {
+        amounts.value[index].price = Number(strdata)
       } else {
-        amounts.value[index].price = Number(amounts.value[index].price)
+        amounts.value[index].price = ''
+      }
+      if (datainvalid) {
+        amounts.value[index].price = ''
       }
       if (clickeditem.value !== null) {
         updateAmount(index, id)
