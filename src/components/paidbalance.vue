@@ -26,11 +26,11 @@
         </div>
         <span class="ellipsis full-width text-white text-h6">
             <span v-if="selecteditem === 'balance'">
-                <!-- for balance --> {{ balance }} تومان
+                <!-- for balance --> {{ separate(balance) }} تومان
                 <span>{{ balancetype }}</span>
             </span>
             <span v-else>
-                <!-- for paid --> {{ paid }} تومان
+                <!-- for paid --> {{ separate(paid) }} تومان
                 <span>{{ paidtype }}</span>
             </span>
         </span>
@@ -66,7 +66,7 @@ export default {
         if (result.value < 0) {
           return result.value * -1
         } else {
-          return result
+          return result.value
         }
       }
     })
@@ -125,11 +125,38 @@ export default {
         if (result.value < 0) {
           return result.value * -1
         } else {
-          return result
+          return result.value
         }
       }
     })
+
+    function separate (Number) {
+      Number += ''
+      Number = Number.replace(',', '')
+      const x = Number.split('.')
+      let y = toEnglishDigits(x[0])
+      const z = x.length > 1 ? '.' + x[1] : ''
+      const rgx = /(\d+)(\d{3})/
+      while (rgx.test(y)) {
+        y = y.replace(rgx, '$1' + ',' + '$2')
+      }
+      return y + z
+    }
+    function toEnglishDigits (str) {
+    // convert persian digits [۰۱۲۳۴۵۶۷۸۹]
+      let e = '۰'.charCodeAt(0)
+      str = str.replace(/[۰-۹]/g, function (t) {
+        return t.charCodeAt(0) - e
+      })
+      // convert arabic indic digits [٠١٢٣٤٥٦٧٨٩]
+      e = '٠'.charCodeAt(0)
+      str = str.replace(/[٠-٩]/g, function (t) {
+        return t.charCodeAt(0) - e
+      })
+      return str
+    }
     return {
+      separate,
       paid,
       paidtype,
       balance,

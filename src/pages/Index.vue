@@ -15,7 +15,7 @@
           <q-card v-if="amount.paid" flat square class="bg-transparent">
             <q-card-section horizontal>
               <div class="ellipsis">
-                برگشتن به حالت پرداخت نشده
+                بازگشت به حالت پرداخت نشده
               </div>
             </q-card-section>
           </q-card>
@@ -31,7 +31,7 @@
         <template v-slot:right>
           <q-card flat square class="bg-transparent">
             <q-card-section horizontal>
-              <div class="ellipsis">
+              <div class="ellipsis full-width">
                 حذف
               </div>
               <q-icon size="xs" color="white" name="delete" />
@@ -69,6 +69,9 @@
               v-if="selectamount.id === amount.id && clickeditem === 'price'"
               :input-class="[{'text-green insetshadow q-pr-sm' : amount.type === 'income'}, {'text-red insetshadow q-pr-sm' : amount.type !== 'income'}]"
               autofocus
+              mask="###,###,###,###,###,###,###,###"
+              unmasked-value
+              reverse-fill-mask
               @blur="disableselect(index, amount.id)"
               bg-color="white"
               borderless
@@ -82,7 +85,7 @@
                   :class="[amount.type === 'income' ? 'text-green' : 'text-red', amount.paid ? 'text-strike' : '']"
                 >
                   <span v-if="amount.price === ''"> 0 </span>
-                  <span v-else> {{ amount.price }} </span>
+                  <span v-else> {{ separate(amount.price) }} </span>
                   <span> تومان </span>
                   <span v-if="amount.type === 'income'"> + </span>
                   <span v-else> - </span>
@@ -101,7 +104,24 @@
               bg-color="white"
               borderless
               v-model="amount.date"
-            />
+            >
+              <template v-slot:append>
+                <q-popup-proxy v-model="dateOfPayment" cover transition-show="scale" transition-hide="scale">
+                  <q-date
+                    v-model="amount.date"
+                    mask="YYYY-MM-DD"
+                    calendar="persian"
+                    title="تاریخ پرداخت"
+                    :subtitle="amount.date"
+                    today-btn
+                  >
+                    <div class="row items-center justify-end">
+                      <q-btn @click="disableselect(index, amount.id)" v-close-popup label="خروج" color="primary" flat />
+                    </div>
+                  </q-date>
+                </q-popup-proxy>
+                </template>
+            </q-input>
             <q-card v-else style="height:56px;" flat square>
               <q-card-section class="q-pa-sm full-height column justify-center">
                 <div class="ellipsis row text-grey-6">
@@ -180,12 +200,15 @@ import { onMounted, defineComponent, reactive, ref } from 'vue'
 import expensesincome from 'src/components/expensesincome.vue'
 import paidbalance from 'src/components/paidbalance.vue'
 import Localbase from 'localbase'
+import { useQuasar } from 'quasar'
 
 const db = new Localbase('db')
 export default defineComponent({
   name: 'PageIndex',
   setup () {
+    const $q = useQuasar()
     const clickeditem = ref(null)
+    const dateOfPayment = ref(false)
     const selectamount = reactive({
       id: 0,
       example: '',
@@ -200,6 +223,31 @@ export default defineComponent({
 
     let timer
 
+    function separate (Number) {
+      Number += ''
+      Number = Number.replace(',', '')
+      const x = Number.split('.')
+      let y = toEnglishDigits(x[0])
+      const z = x.length > 1 ? '.' + x[1] : ''
+      const rgx = /(\d+)(\d{3})/
+      while (rgx.test(y)) {
+        y = y.replace(rgx, '$1' + ',' + '$2')
+      }
+      return y + z
+    }
+    function toEnglishDigits (str) {
+    // convert persian digits [۰۱۲۳۴۵۶۷۸۹]
+      let e = '۰'.charCodeAt(0)
+      str = str.replace(/[۰-۹]/g, function (t) {
+        return t.charCodeAt(0) - e
+      })
+      // convert arabic indic digits [٠١٢٣٤٥٦٧٨٩]
+      e = '٠'.charCodeAt(0)
+      str = str.replace(/[٠-٩]/g, function (t) {
+        return t.charCodeAt(0) - e
+      })
+      return str
+    }
     function storeIncomeAmount () {
       const amount = reactive({
         id: uniqeID.value + 1,
@@ -269,6 +317,9 @@ export default defineComponent({
       selectamount.date = amountdata.date
       clearTimeout(timer)
       clickeditem.value = item
+      if (item === 'date') {
+        dateOfPayment.value = true
+      }
     }
     function disableselect (index, id) {
       if (clickeditem.value !== null) {
@@ -339,6 +390,7 @@ export default defineComponent({
       //
     }
     return {
+      dateOfPayment,
       getappdata,
       getamounts,
       disableselect,
@@ -349,6 +401,7 @@ export default defineComponent({
       storeExpenseAmount,
       updateAmount,
       amounts,
+      separate,
       onLeft (index, id) {
         if (amounts.value[index].paid) {
           timer = setTimeout(() => {
@@ -368,11 +421,27 @@ export default defineComponent({
       },
       finalize,
       onRight (index, id) {
-        amounts.value.splice(index, 1)
-        db.collection('amounts').doc({ id: id }).delete()
+        $q.dialog({
+          message: 'آیا از حذف مطمئن اید؟',
+          position: 'bottom',
+          ok: {
+            push: true
+          },
+          cancel: {
+            push: true,
+            color: 'negative'
+          }
+        }).onOk(() => {
+          amounts.value.splice(index, 1)
+          db.collection('amounts').doc({ id: id }).delete()
+          clearInterval(timer)
+        })
       },
       action ({ side, reset }) {
         if (side === 'left') {
+          finalize(reset)
+        }
+        if (side === 'right') {
           finalize(reset)
         }
       }

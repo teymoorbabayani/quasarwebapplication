@@ -26,10 +26,10 @@
         </div>
         <span class="ellipsis full-width text-white text-h6">
             <span v-if="selecteditem === 'income'">
-                <!-- for income --> {{ income }} تومان
+                <!-- for income --> {{ separate(income) }} تومان
             </span>
             <span v-else>
-                <!-- for expense --> {{ expense }}
+                <!-- for expense --> {{ separate(expense) }}
                 <span v-if="expense !== 0">-</span>
                  تومان
             </span>
@@ -75,7 +75,34 @@ export default {
         return result.value
       }
     })
+
+    function separate (Number) {
+      Number += ''
+      Number = Number.replace(',', '')
+      const x = Number.split('.')
+      let y = toEnglishDigits(x[0])
+      const z = x.length > 1 ? '.' + x[1] : ''
+      const rgx = /(\d+)(\d{3})/
+      while (rgx.test(y)) {
+        y = y.replace(rgx, '$1' + ',' + '$2')
+      }
+      return y + z
+    }
+    function toEnglishDigits (str) {
+    // convert persian digits [۰۱۲۳۴۵۶۷۸۹]
+      let e = '۰'.charCodeAt(0)
+      str = str.replace(/[۰-۹]/g, function (t) {
+        return t.charCodeAt(0) - e
+      })
+      // convert arabic indic digits [٠١٢٣٤٥٦٧٨٩]
+      e = '٠'.charCodeAt(0)
+      str = str.replace(/[٠-٩]/g, function (t) {
+        return t.charCodeAt(0) - e
+      })
+      return str
+    }
     return {
+      separate,
       expense,
       income,
       changeitem,
