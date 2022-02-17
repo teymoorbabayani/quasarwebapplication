@@ -94,7 +94,7 @@
             </q-card>
           </div>
           <q-separator vertical color="grey-3" />
-          <div @click="selectamoutfunc(amount, 'date')" class="col">
+          <div @click="selectamoutfunc(amount, 'date')" class="col-3">
             <q-input
               v-if="selectamount.id === amount.id && clickeditem === 'date'"
               input-class="insetshadow q-pr-sm text-primary"
@@ -116,17 +116,19 @@
                     today-btn
                   >
                     <div class="row items-center justify-end">
-                      <q-btn @click="disableselect(index, amount.id)" v-close-popup label="خروج" color="primary" flat />
+                      <q-btn @click="disableselect(index, amount.id)" v-close-popup label="انتخاب" color="primary" flat />
+                      <q-space />
+                      <q-btn @click="clearselect(index, amount.id)" v-close-popup label="پاک کردن" color="primary" flat />
                     </div>
                   </q-date>
                 </q-popup-proxy>
                 </template>
             </q-input>
             <q-card v-else style="height:56px;" flat square>
-              <q-card-section class="q-pa-sm full-height column justify-center">
+              <q-card-section class="q-pa-none q-pl-xs full-height column justify-center">
                 <div class="ellipsis row text-grey-6">
-                  <div class="col-10 column justify-center">
-                    <span v-if="amount.date === null" style="font-size:10px">تاریخ</span>
+                  <div class="col-8 column justify-center">
+                    <span class="row justify-center" v-if="amount.date === null" style="font-size:10px">تاریخ</span>
                     <span v-else class="row justify-center text-primary">
                       <span
                       :class="amount.paid ? 'text-strike' : ''"
@@ -139,6 +141,7 @@
                   <div class="column justify-center">
                     <q-icon name="expand_more" />
                   </div>
+                  <q-space />
                 </div>
               </q-card-section>
             </q-card>
@@ -196,7 +199,7 @@
 </template>
 
 <script>
-import { onMounted, defineComponent, reactive, ref } from 'vue'
+import { onMounted, defineComponent, reactive, ref, watch } from 'vue'
 import expensesincome from 'src/components/expensesincome.vue'
 import paidbalance from 'src/components/paidbalance.vue'
 import Localbase from 'localbase'
@@ -220,6 +223,14 @@ export default defineComponent({
     })
     const uniqeID = ref(0)
     const amounts = ref([])
+
+    watch(dateOfPayment, (dateOfPayment, prevDateOfPayment) => {
+      if (dateOfPayment === false) {
+        timer = setTimeout(() => {
+          clickeditem.value = null
+        }, 100)
+      }
+    })
 
     let timer
 
@@ -329,6 +340,15 @@ export default defineComponent({
         }, 100)
       }
     }
+    function clearselect (index, id) {
+      amounts.value[index].date = null
+      if (clickeditem.value !== null) {
+        updateAmount(index, id)
+        timer = setTimeout(() => {
+          clickeditem.value = null
+        }, 100)
+      }
+    }
     function finalize (reset) {
       timer = setTimeout(() => {
         reset()
@@ -394,6 +414,7 @@ export default defineComponent({
       getappdata,
       getamounts,
       disableselect,
+      clearselect,
       clickeditem,
       selectamount,
       selectamoutfunc,
