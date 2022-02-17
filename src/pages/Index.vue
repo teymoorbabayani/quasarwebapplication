@@ -69,10 +69,7 @@
               v-if="selectamount.id === amount.id && clickeditem === 'price'"
               :input-class="[{'text-green insetshadow q-pr-sm' : amount.type === 'income'}, {'text-red insetshadow q-pr-sm' : amount.type !== 'income'}]"
               autofocus
-              mask="###,###,###,###,###,###,###,###"
-              unmasked-value
-              reverse-fill-mask
-              @blur="disableselect(index, amount.id)"
+              @blur="disableselectprice(index, amount.id)"
               bg-color="white"
               borderless
               dir="ltr"
@@ -234,6 +231,35 @@ export default defineComponent({
 
     let timer
 
+    function disableselectprice (index, id) {
+      let strdata = amounts.value[index].price.toString()
+      const find = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']
+      const replace = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
+      for (let i = 0; i < find.length; i++) {
+        const regex = new RegExp(find[i], 'g')
+        strdata = strdata.replace(regex, replace[i])
+      }
+      let datainvalid = false
+      for (let i = 0; i < strdata.length; i++) {
+        const charCode = strdata.charCodeAt(i)
+        if (!/^[\u06F0-\u06F90-9]+$/g.test(String.fromCharCode(charCode)) || charCode === 32) {
+          if (charCode !== 32) {
+            datainvalid = true
+          }
+        }
+      }
+      if (datainvalid) {
+        amounts.value[index].price = 0
+      } else {
+        amounts.value[index].price = Number(amounts.value[index].price)
+      }
+      if (clickeditem.value !== null) {
+        updateAmount(index, id)
+        timer = setTimeout(() => {
+          clickeditem.value = null
+        }, 100)
+      }
+    }
     function separate (Number) {
       Number += ''
       Number = Number.replace(',', '')
@@ -414,6 +440,7 @@ export default defineComponent({
       getappdata,
       getamounts,
       disableselect,
+      disableselectprice,
       clearselect,
       clickeditem,
       selectamount,
