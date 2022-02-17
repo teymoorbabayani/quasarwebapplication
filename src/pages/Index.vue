@@ -443,14 +443,12 @@ export default defineComponent({
       finalize,
       onRight (index, id) {
         $q.dialog({
-          message: 'آیا از حذف مطمئن اید؟',
+          message: 'حذف شود؟',
           position: 'bottom',
           ok: {
-            push: true
           },
           cancel: {
-            push: true,
-            color: 'negative'
+            color: 'grey-8'
           }
         }).onOk(() => {
           amounts.value.splice(index, 1)
