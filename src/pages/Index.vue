@@ -231,31 +231,35 @@ export default defineComponent({
 
     let timer
 
-    function disableselectprice (index, id) {
-      let strdata = amounts.value[index].price.toString()
+    function convertdata (index) {
+      const strdata = ref('')
+      strdata.value = amounts.value[index].price.toString()
       const find = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']
       const replace = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
       for (let i = 0; i < find.length; i++) {
         const regex = new RegExp(find[i], 'g')
-        strdata = strdata.replace(regex, replace[i])
+        strdata.value = strdata.value.replace(regex, replace[i])
       }
       let datainvalid = false
-      for (let i = 0; i < strdata.length; i++) {
-        const charCode = strdata.charCodeAt(i)
+      for (let i = 0; i < strdata.value.length; i++) {
+        const charCode = strdata.value.charCodeAt(i)
         if (!/^[\u06F0-\u06F90-9]+$/g.test(String.fromCharCode(charCode)) || charCode === 32) {
           if (charCode !== 32) {
             datainvalid = true
           }
         }
       }
-      if (Number(strdata) !== 0) {
-        amounts.value[index].price = Number(strdata)
+      if (Number(strdata.value) !== 0) {
+        amounts.value[index].price = Number(strdata.value)
       } else {
         amounts.value[index].price = ''
       }
       if (datainvalid) {
         amounts.value[index].price = ''
       }
+    }
+    function disableselectprice (index, id) {
+      convertdata(index)
       if (clickeditem.value !== null) {
         updateAmount(index, id)
         timer = setTimeout(() => {
@@ -345,6 +349,12 @@ export default defineComponent({
       selectamoutfunc(amount, 'text')
     }
     function selectamoutfunc (amountdata, item) {
+      if (clickeditem.value === 'price') {
+        const index = amounts.value.findIndex(amount => amount.id === selectamount.id)
+        if (index > -1) {
+          convertdata(index)
+        }
+      }
       const olddataindex = amounts.value.findIndex(amount =>
         amount.id === selectamount.id
       )
@@ -383,7 +393,6 @@ export default defineComponent({
         reset()
       }, 1000)
     }
-
     function updateAmount (index, id) {
       if (clickeditem.value !== null) {
         if (clickeditem.value === 'text') {
@@ -401,7 +410,6 @@ export default defineComponent({
         }
       }
     }
-
     onMounted(() => {
       getamounts()
       getappdata()
@@ -439,6 +447,7 @@ export default defineComponent({
       //
     }
     return {
+      convertdata,
       dateOfPayment,
       getappdata,
       getamounts,
@@ -481,9 +490,9 @@ export default defineComponent({
             color: 'grey-8'
           }
         }).onOk(() => {
+          clearInterval(timer)
           amounts.value.splice(index, 1)
           db.collection('amounts').doc({ id: id }).delete()
-          clearInterval(timer)
         })
       },
       action ({ side, reset }) {
