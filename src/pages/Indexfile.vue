@@ -199,14 +199,19 @@
 import { onMounted, defineComponent, reactive, ref, watch } from 'vue'
 import expensesincome from 'src/components/expensesincome.vue'
 import paidbalance from 'src/components/paidbalance.vue'
-import Localbase from 'localbase'
 import { useQuasar } from 'quasar'
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
 
-const db = new Localbase('db')
 export default defineComponent({
   name: 'PageIndex',
   setup () {
     const $q = useQuasar()
+    const dataformat = reactive({
+      first: []
+    })
+    const appdata = reactive({
+      uniqeID: 0
+    })
     const clickeditem = ref(null)
     const dateOfPayment = ref(false)
     const selectamount = reactive({
@@ -257,7 +262,7 @@ export default defineComponent({
         amounts.value[index].price = ''
       }
       if (clickeditem.value !== null) {
-        updateAmount(index, id)
+        updateAmount()
         timer = setTimeout(() => {
           clickeditem.value = null
         }, 100)
@@ -288,7 +293,7 @@ export default defineComponent({
       })
       return str
     }
-    function storeIncomeAmount () {
+    const storeIncomeAmount = async () => { // fixed
       const amount = reactive({
         id: uniqeID.value + 1,
         example: 'مثل حقوق',
@@ -298,25 +303,26 @@ export default defineComponent({
         paid: false,
         date: null
       })
-      db.collection('amounts').add({
-        id: uniqeID.value + 1,
-        text: '',
-        type: 'income',
-        price: '',
-        paid: false,
-        date: null
-      })
       amounts.value.push(amount)
+      dataformat.first = amounts.value
+      await Filesystem.writeFile({
+        path: 'fajetdata.json',
+        data: JSON.stringify(dataformat),
+        directory: Directory.External,
+        encoding: Encoding.UTF8
+      })
       //
       uniqeID.value++
-      db.collection('appdata')
-        .doc('uniqeID')
-        .update({
-          value: uniqeID.value
-        })
+      appdata.uniqeID = uniqeID.value
+      await Filesystem.writeFile({
+        path: 'appdata.json',
+        data: JSON.stringify(appdata),
+        directory: Directory.External,
+        encoding: Encoding.UTF8
+      })
       selectamoutfunc(amount, 'text')
     }
-    function storeExpenseAmount () {
+    const storeExpenseAmount = async () => { // fixed
       const amount = reactive({
         id: uniqeID.value + 1,
         example: 'مثل اجاره',
@@ -326,22 +332,23 @@ export default defineComponent({
         paid: false,
         date: null
       })
-      db.collection('amounts').add({
-        id: uniqeID.value + 1,
-        text: '',
-        type: 'expense',
-        price: '',
-        paid: false,
-        date: null
-      })
       amounts.value.push(amount)
+      dataformat.first = amounts.value
+      await Filesystem.writeFile({
+        path: 'fajetdata.json',
+        data: JSON.stringify(dataformat),
+        directory: Directory.External,
+        encoding: Encoding.UTF8
+      })
       //
       uniqeID.value++
-      db.collection('appdata')
-        .doc('uniqeID')
-        .update({
-          value: uniqeID.value
-        })
+      appdata.uniqeID = uniqeID.value
+      await Filesystem.writeFile({
+        path: 'appdata.json',
+        data: JSON.stringify(appdata),
+        directory: Directory.External,
+        encoding: Encoding.UTF8
+      })
       selectamoutfunc(amount, 'text')
     }
     function selectamoutfunc (amountdata, item) {
@@ -363,7 +370,7 @@ export default defineComponent({
     }
     function disableselect (index, id) {
       if (clickeditem.value !== null) {
-        updateAmount(index, id)
+        updateAmount()
         timer = setTimeout(() => {
           clickeditem.value = null
         }, 100)
@@ -372,7 +379,7 @@ export default defineComponent({
     function clearselect (index, id) {
       amounts.value[index].date = null
       if (clickeditem.value !== null) {
-        updateAmount(index, id)
+        updateAmount()
         timer = setTimeout(() => {
           clickeditem.value = null
         }, 100)
@@ -383,22 +390,15 @@ export default defineComponent({
         reset()
       }, 1000)
     }
-
-    function updateAmount (index, id) {
+    const updateAmount = async () => {
+      dataformat.first = amounts.value
       if (clickeditem.value !== null) {
-        if (clickeditem.value === 'text') {
-          db.collection('amounts').doc({ id: id }).update({
-            text: amounts.value[index].text
-          })
-        } else if (clickeditem.value === 'price') {
-          db.collection('amounts').doc({ id: id }).update({
-            price: amounts.value[index].price
-          })
-        } else if (clickeditem.value === 'date') {
-          db.collection('amounts').doc({ id: id }).update({
-            date: amounts.value[index].date
-          })
-        }
+        await Filesystem.writeFile({
+          path: 'fajetdata.json',
+          data: JSON.stringify(dataformat),
+          directory: Directory.External,
+          encoding: Encoding.UTF8
+        })
       }
     }
 
@@ -408,35 +408,69 @@ export default defineComponent({
       clearTimeout(timer)
     })
 
-    function getamounts () {
-      db.collection('amounts').get().then(amountsdbdata => {
-        amounts.value = amountsdbdata
-      })
-    }
-    function getappdata () {
-      db.collection('appdata')
-        .doc('uniqeID')
-        .get()
-        .then(document => {
-          if (document.value === null) {
-            db.collection('appdata')
-              .doc('uniqeID')
-              .set({
-                value: 0
-              })
-            uniqeID.value = 0
-          } else if (document.value >= 0) {
-            uniqeID.value = document.value
-          }
-        }).catch(er => {
-          db.collection('appdata')
-            .doc('uniqeID')
-            .set({
-              value: 0
-            })
-          uniqeID.value = 0
+    const getamounts = async () => { // fixed
+      try {
+        const amountjson = await Filesystem.readFile({
+          path: 'fajetdata.json',
+          directory: Directory.External,
+          encoding: Encoding.UTF8
         })
-      //
+        amounts.value = JSON.parse(amountjson.data).first
+      } catch {
+        await Filesystem.writeFile({
+          path: 'fajetdata.json',
+          data: JSON.stringify(dataformat),
+          directory: Directory.External,
+          encoding: Encoding.UTF8
+        })
+      }
+    }
+    const getappdata = async () => { // fixed
+      try {
+        const appdatajson = await Filesystem.readFile({
+          path: 'appdata.json',
+          directory: Directory.External,
+          encoding: Encoding.UTF8
+        })
+        uniqeID.value = JSON.parse(appdatajson.data).uniqeID
+      } catch {
+        appdata.uniqeID = 0
+        await Filesystem.writeFile({
+          path: 'appdata.json',
+          data: JSON.stringify(appdata),
+          directory: Directory.External,
+          encoding: Encoding.UTF8
+        })
+        uniqeID.value = 0
+      }
+    }
+    const onLeft = async (index, id) => {
+      timer = setTimeout(() => {
+        amounts.value[index].paid = !amounts.value[index].paid
+        const data = amounts.value[index]
+        $q.dialog({
+          dark: true,
+          title: 'hi',
+          message: JSON.stringify(data)
+        }).onOk(() => {
+        })
+        updateAmount()
+      }, 1500)
+    }
+    function onRight (index, id) {
+      $q.dialog({
+        message: 'حذف شود؟',
+        position: 'bottom',
+        ok: {
+        },
+        cancel: {
+          color: 'grey-8'
+        }
+      }).onOk(() => {
+        amounts.value.splice(index, 1)
+        updateAmount()
+        clearInterval(timer)
+      })
     }
     return {
       dateOfPayment,
@@ -453,39 +487,9 @@ export default defineComponent({
       updateAmount,
       amounts,
       separate,
-      onLeft (index, id) {
-        if (amounts.value[index].paid) {
-          timer = setTimeout(() => {
-            amounts.value[index].paid = false
-            db.collection('amounts').doc({ id: id }).update({
-              paid: false
-            })
-          }, 1500)
-        } else {
-          timer = setTimeout(() => {
-            amounts.value[index].paid = true
-            db.collection('amounts').doc({ id: id }).update({
-              paid: true
-            })
-          }, 1500)
-        }
-      },
+      onLeft,
       finalize,
-      onRight (index, id) {
-        $q.dialog({
-          message: 'حذف شود؟',
-          position: 'bottom',
-          ok: {
-          },
-          cancel: {
-            color: 'grey-8'
-          }
-        }).onOk(() => {
-          amounts.value.splice(index, 1)
-          db.collection('amounts').doc({ id: id }).delete()
-          clearInterval(timer)
-        })
-      },
+      onRight,
       action ({ side, reset }) {
         if (side === 'left') {
           finalize(reset)
