@@ -3,8 +3,5 @@
 	"appName": "فاجت",
 	"bundledWebRuntime": false,
 	"npmClient": "yarn",
-	"webDir": "www",
-	"server": {
-		"url": "http://192.168.244.1:8080"
-	}
+	"webDir": "www"
 }
