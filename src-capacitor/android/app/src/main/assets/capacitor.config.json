@@ -1,7 +1,10 @@
 {
-  "appId": "ir.fudget.fajet",
-  "appName": "فاجت",
-  "bundledWebRuntime": false,
-  "npmClient": "yarn",
-  "webDir": "www"
+	"appId": "ir.fudget.fajet",
+	"appName": "فاجت",
+	"bundledWebRuntime": false,
+	"npmClient": "yarn",
+	"webDir": "www",
+	"server": {
+		"url": "http://192.168.244.1:8080"
+	}
 }

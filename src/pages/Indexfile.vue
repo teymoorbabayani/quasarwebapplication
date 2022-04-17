@@ -2,10 +2,47 @@
   <q-page class="bg-primary" style="padding-bottom: 200px">
     <q-list bordered>
       <q-separator v-if="amounts.length > 0" color="orange" />
-      <q-slide-item
+        <q-table
+          flat
+          :rows="amounts"
+          row-key="index"
+        >
+          <template v-slot:header="props">
+            <q-tr :props="props">
+              <q-th>
+                عملیات
+              </q-th>
+
+              <q-th
+                v-for="col in props.cols"
+                :key="col.name"
+                :props="props"
+              >
+                {{ col.label }}
+              </q-th>
+            </q-tr>
+          </template>
+          <template v-slot:body="props">
+            <q-tr :props="props" :key="`m_${props.row.index}`">
+              <q-td>
+                <q-btn @click="onLeft(props.row.id, props.row.paid)" color="primary" class="text-white q-mr-xs" dense label="پرداخت" />
+                <q-btn @click="onRight(props.row.id)" color="secondary" class="text-white" dense label="حذف" />
+              </q-td>
+
+              <q-td
+                v-for="col in props.cols"
+                :key="col.name"
+                :props="props"
+              >
+                {{ col.value }}
+              </q-td>
+            </q-tr>
+          </template>
+        </q-table>
+      <!-- <q-slide-item
         v-for="(amount,index) in amounts"
         :key="amount.id"
-        @left="onLeft(index, amount.id)"
+        @left="onLeft(index, amount.id, amount.paid)"
         @right="onRight(index, amount.id)"
         @action ="action"
         :left-color="amount.paid ? 'primary' : 'green'"
@@ -39,7 +76,7 @@
           </q-card>
         </template>
         <div class="row full-width">
-          <div @click="selectamoutfunc(amount, 'text')" class="col">
+          <div @click="selectItem(amount, 'text')" class="col">
             <q-input
               item-aligned
               class="full-width q-pa-none"
@@ -47,7 +84,7 @@
               :input-class="[{'text-green insetshadow q-pl-sm' : amount.type === 'income'}, {'text-red insetshadow q-pl-sm' : amount.type !== 'income'}]"
               autofocus
               hide-bottom-space
-              @blur="disableselect(index, amount.id)"
+              @blur="blurItem(index, amount.id)"
               bg-color="white"
               borderless
               v-model="amount.text"
@@ -64,12 +101,12 @@
               </q-card-section>
             </q-card>
           </div>
-          <div @click="selectamoutfunc(amount, 'price')" class="col">
+          <div @click="selectItem(amount, 'price')" class="col">
             <q-input
               v-if="selectamount.id === amount.id && clickeditem === 'price'"
               :input-class="[{'text-green insetshadow q-pr-sm' : amount.type === 'income'}, {'text-red insetshadow q-pr-sm' : amount.type !== 'income'}]"
               autofocus
-              @blur="disableselectprice(index, amount.id)"
+              @blur="unselectprice(index, amount.id)"
               bg-color="white"
               borderless
               dir="ltr"
@@ -91,19 +128,19 @@
             </q-card>
           </div>
           <q-separator vertical color="grey-3" />
-          <div @click="selectamoutfunc(amount, 'date')" class="col-3">
+          <div @click="selectItem(amount, 'date')" class="col-3">
             <q-input
               v-if="selectamount.id === amount.id && clickeditem === 'date'"
               input-class="insetshadow q-pr-sm text-primary"
               autofocus
               dir="ltr"
-              @blur="disableselect(index, amount.id)"
+              @blur="blurItem(index, amount.id)"
               bg-color="white"
               borderless
               v-model="amount.date"
             >
               <template v-slot:append>
-                <q-popup-proxy v-model="dateOfPayment" cover transition-show="scale" transition-hide="scale">
+                <q-popup-proxy v-model="datePopup" cover transition-show="scale" transition-hide="scale">
                   <q-date
                     v-model="amount.date"
                     mask="YYYY-MM-DD"
@@ -113,9 +150,9 @@
                     today-btn
                   >
                     <div class="row items-center justify-end">
-                      <q-btn @click="disableselect(index, amount.id)" v-close-popup label="انتخاب" color="primary" flat />
+                      <q-btn @click="blurItem(index, amount.id)" v-close-popup label="انتخاب" color="primary" flat />
                       <q-space />
-                      <q-btn @click="clearselect(index, amount.id)" v-close-popup label="پاک کردن" color="primary" flat />
+                      <q-btn @click="clearDate(index, amount.id)" v-close-popup label="پاک کردن" color="primary" flat />
                     </div>
                   </q-date>
                 </q-popup-proxy>
@@ -145,7 +182,7 @@
           </div>
         </div>
         <q-separator color="orange" />
-      </q-slide-item>
+      </q-slide-item> -->
     </q-list>
     <!-- btns for set income or expense -->
     <div class="text-center text-white shadow-2">
@@ -170,6 +207,10 @@
         </div>
       </q-card-actions>
       </q-card>
+      <div>
+        <q-btn label="update data" @click="updateAmount" />
+        {{ amounts.length }}
+      </div>
     </div>
     <!-- footer -->
     <div v-show="clickeditem === null" class="fixed-bottom bg-primary shadow-up-2">
@@ -213,7 +254,7 @@ export default defineComponent({
       uniqeID: 0
     })
     const clickeditem = ref(null)
-    const dateOfPayment = ref(false)
+    const datePopup = ref(false)
     const selectamount = reactive({
       id: 0,
       example: '',
@@ -226,8 +267,8 @@ export default defineComponent({
     const uniqeID = ref(0)
     const amounts = ref([])
 
-    watch(dateOfPayment, (dateOfPayment, prevDateOfPayment) => {
-      if (dateOfPayment === false) {
+    watch(datePopup, (datePopup, prevDatePopup) => {
+      if (datePopup === false) {
         timer = setTimeout(() => {
           clickeditem.value = null
         }, 100)
@@ -236,7 +277,7 @@ export default defineComponent({
 
     let timer
 
-    function disableselectprice (index, id) {
+    function unselectprice (index, id) {
       let strdata = amounts.value[index].price.toString()
       const find = ['۰', '۱', '۲', '۳', '۴', '۵', '۶', '۷', '۸', '۹']
       const replace = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
@@ -293,7 +334,7 @@ export default defineComponent({
       })
       return str
     }
-    const storeIncomeAmount = async () => { // fixed
+    const storeIncomeAmount = async () => { // dar amad fixed
       const amount = reactive({
         id: uniqeID.value + 1,
         example: 'مثل حقوق',
@@ -320,9 +361,9 @@ export default defineComponent({
         directory: Directory.External,
         encoding: Encoding.UTF8
       })
-      selectamoutfunc(amount, 'text')
+      selectItem(amount, 'text')
     }
-    const storeExpenseAmount = async () => { // fixed
+    const storeExpenseAmount = async () => { // hazine fixed
       const amount = reactive({
         id: uniqeID.value + 1,
         example: 'مثل اجاره',
@@ -349,14 +390,14 @@ export default defineComponent({
         directory: Directory.External,
         encoding: Encoding.UTF8
       })
-      selectamoutfunc(amount, 'text')
+      selectItem(amount, 'text')
     }
-    function selectamoutfunc (amountdata, item) {
+    function selectItem (amountdata, item) {
       const olddataindex = amounts.value.findIndex(amount =>
         amount.id === selectamount.id
       )
       if (olddataindex > -1) {
-        disableselect(olddataindex, selectamount.id)
+        blurItem(olddataindex, selectamount.id)
       }
       selectamount.id = amountdata.id
       selectamount.text = amountdata.text
@@ -365,10 +406,10 @@ export default defineComponent({
       clearTimeout(timer)
       clickeditem.value = item
       if (item === 'date') {
-        dateOfPayment.value = true
+        datePopup.value = true
       }
     }
-    function disableselect (index, id) {
+    function blurItem (index, id) {
       if (clickeditem.value !== null) {
         updateAmount()
         timer = setTimeout(() => {
@@ -376,7 +417,7 @@ export default defineComponent({
         }, 100)
       }
     }
-    function clearselect (index, id) {
+    function clearDate (index, id) {
       amounts.value[index].date = null
       if (clickeditem.value !== null) {
         updateAmount()
@@ -444,18 +485,36 @@ export default defineComponent({
         uniqeID.value = 0
       }
     }
-    const onLeft = async (index, id) => {
+    function onLeft (id, newdata) {
+      const index = amounts.value.findIndex(item => item.id === id)
+      console.log(amounts.value[index])
+      amounts.value[index].paid = true
+      const result = ref([])
+      amounts.value.forEach(item => {
+        result.value.push(item)
+      })
+      updateForOnLeft(result.value, index)
+      /* selectItem(amounts.value[index], 'text')
+      blurItem(index, id) */
       timer = setTimeout(() => {
-        amounts.value[index].paid = !amounts.value[index].paid
-        const data = amounts.value[index]
-        $q.dialog({
-          dark: true,
-          title: 'hi',
-          message: JSON.stringify(data)
-        }).onOk(() => {
-        })
-        updateAmount()
       }, 1500)
+    }
+    const updateForOnLeft = async (result, index) => {
+      dataformat.first = result
+      $q.dialog({
+        dark: true,
+        title: 'gi',
+        message: JSON.stringify(dataformat.first.value[index].paid)
+      }).onOk(() => {
+      })
+      if (clickeditem.value !== null) {
+        await Filesystem.writeFile({
+          path: 'fajetdata.json',
+          data: JSON.stringify(dataformat),
+          directory: Directory.External,
+          encoding: Encoding.UTF8
+        })
+      }
     }
     function onRight (index, id) {
       $q.dialog({
@@ -473,15 +532,15 @@ export default defineComponent({
       })
     }
     return {
-      dateOfPayment,
+      datePopup,
       getappdata,
       getamounts,
-      disableselect,
-      disableselectprice,
-      clearselect,
+      blurItem,
+      unselectprice,
+      clearDate,
       clickeditem,
       selectamount,
-      selectamoutfunc,
+      selectItem,
       storeIncomeAmount,
       storeExpenseAmount,
       updateAmount,
