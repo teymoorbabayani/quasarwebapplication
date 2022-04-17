@@ -1,7 +1,7 @@
 {
-  "appId": "ir.fudget.fajet",
-  "appName": "فاجت",
-  "bundledWebRuntime": false,
-  "npmClient": "yarn",
-  "webDir": "www"
+	"appId": "ir.fudget.fajet",
+	"appName": "فاجت",
+	"bundledWebRuntime": false,
+	"npmClient": "yarn",
+	"webDir": "www"
 }
