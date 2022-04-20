@@ -2,44 +2,7 @@
   <q-page class="bg-primary" style="padding-bottom: 200px">
     <q-list bordered>
       <q-separator v-if="amounts.length > 0" color="orange" />
-        <q-table
-          flat
-          :rows="amounts"
-          row-key="index"
-        >
-          <template v-slot:header="props">
-            <q-tr :props="props">
-              <q-th>
-                عملیات
-              </q-th>
-
-              <q-th
-                v-for="col in props.cols"
-                :key="col.name"
-                :props="props"
-              >
-                {{ col.label }}
-              </q-th>
-            </q-tr>
-          </template>
-          <template v-slot:body="props">
-            <q-tr :props="props" :key="`m_${props.row.index}`">
-              <q-td>
-                <q-btn @click="onLeft(props.row.id, props.row.paid)" color="primary" class="text-white q-mr-xs" dense label="پرداخت" />
-                <q-btn @click="onRight(props.row.id)" color="secondary" class="text-white" dense label="حذف" />
-              </q-td>
-
-              <q-td
-                v-for="col in props.cols"
-                :key="col.name"
-                :props="props"
-              >
-                {{ col.value }}
-              </q-td>
-            </q-tr>
-          </template>
-        </q-table>
-      <!-- <q-slide-item
+      <q-slide-item
         v-for="(amount,index) in amounts"
         :key="amount.id"
         @left="onLeft(index, amount.id, amount.paid)"
@@ -182,7 +145,7 @@
           </div>
         </div>
         <q-separator color="orange" />
-      </q-slide-item> -->
+      </q-slide-item>
     </q-list>
     <!-- btns for set income or expense -->
     <div class="text-center text-white shadow-2">
@@ -485,15 +448,18 @@ export default defineComponent({
         uniqeID.value = 0
       }
     }
-    function onLeft (id, newdata) {
+    const onLeft = async (id, newdata) => {
       const index = amounts.value.findIndex(item => item.id === id)
-      console.log(amounts.value[index])
-      amounts.value[index].paid = true
+      if (amounts.value[index].paid) {
+        amounts.value[index].paid = false
+      } else {
+        amounts.value[index].paid = true
+      }
       const result = ref([])
       amounts.value.forEach(item => {
         result.value.push(item)
       })
-      updateForOnLeft(result.value, index)
+      await updateForOnLeft(result.value, index)
       /* selectItem(amounts.value[index], 'text')
       blurItem(index, id) */
       timer = setTimeout(() => {
@@ -516,7 +482,7 @@ export default defineComponent({
         })
       }
     }
-    function onRight (index, id) {
+    const onRight = async (index, id) => {
       $q.dialog({
         message: 'حذف شود؟',
         position: 'bottom',
@@ -525,9 +491,9 @@ export default defineComponent({
         cancel: {
           color: 'grey-8'
         }
-      }).onOk(() => {
+      }).onOk(async () => {
         amounts.value.splice(index, 1)
-        updateAmount()
+        await updateAmount()
         clearInterval(timer)
       })
     }
